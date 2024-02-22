@@ -1,0 +1,105 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+}
+
+img {
+  -webkit-user-drag: none;
+  -khtml-user-drag: none;
+  -moz-user-drag: none;
+  -o-user-drag: none;
+  user-select: none;
+}
+
+.game {
+  background-image: url(@/assets/images/background.webp);
+  background-size: cover;
+  height: 100vh;
+  overflow-x: hidden;
+  overflow-y: hidden;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(7, 7rem);
+    justify-content: space-between;
+    // gap: 2rem;
+    width: 70%;
+    margin: 0 auto;
+
+    &.upper {
+      height: 10rem;
+      padding-right: 2rem;
+      padding-left: 2rem;
+      margin-top: 1rem;
+      margin-bottom: 1rem;
+    }
+
+    &.board {
+      height: 80%;
+      padding: 2rem;
+    }
+  }
+
+  .upper {
+
+    .deck-area {
+      grid-column-start: 1;
+      grid-column-end: 4;
+      display: grid;
+      grid-template-columns: repeat(3, 7rem);
+      justify-content: space-between;
+
+      .deck-displayed {
+        grid-column-start: 2;
+        grid-column-end: 4;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        gap: 1rem;
+      }
+    }
+
+    .colors {
+      grid-column-start: 4;
+      grid-column-end: 8;
+      height: 10rem;
+      display: grid;
+      grid-template-columns: repeat(4, 7rem);
+      justify-content: space-between;
+
+      .placeholder {
+        background-color: rgba(0, 0, 0, 0.5);
+        background-size: contain;
+        background-repeat: no-repeat;
+        background-position: center;
+        background-origin: padding-box;
+        opacity: .5;
+
+        &-hearts {
+          background-image: url(@/assets/images/heart.svg);
+        }
+
+        &-spades {
+          background-image: url(@/assets/images/spade.svg);
+        }
+
+        &-diamonds {
+          background-image: url(@/assets/images/diamond.svg);
+        }
+
+        &-clubs {
+          background-image: url(@/assets/images/club.svg);
+        }
+      }
+    }
+  }
+}
