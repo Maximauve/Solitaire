@@ -62,9 +62,17 @@ img {
         grid-column-start: 2;
         grid-column-end: 4;
         display: flex;
-        justify-content: center;
+        justify-content: flex-start;
         align-items: center;
         gap: 1rem;
+
+        .card:nth-last-child(2) {
+          margin-left: 2rem;
+        }
+
+        .card:last-child {
+          margin-left: 4rem;
+        }
       }
     }
 
@@ -84,19 +92,19 @@ img {
         background-origin: padding-box;
         opacity: .5;
 
-        &-hearts {
+        &-heart {
           background-image: url(@/assets/images/heart.svg);
         }
 
-        &-spades {
+        &-spade {
           background-image: url(@/assets/images/spade.svg);
         }
 
-        &-diamonds {
+        &-diamond {
           background-image: url(@/assets/images/diamond.svg);
         }
 
-        &-clubs {
+        &-club {
           background-image: url(@/assets/images/club.svg);
         }
       }

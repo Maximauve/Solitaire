@@ -5,6 +5,9 @@ export enum Symbol {
   CLUB = "club"
 };
 
-export interface CardValueType {
-  [key: number]: string
+export interface CardType {
+  symbol: Symbol,
+  value: string,
+  hidden?: boolean,
+  active?: boolean
 }
