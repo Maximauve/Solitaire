@@ -2,11 +2,15 @@
 import Card from '@/components/Card.vue';
 import { Symbol, type CardType } from '@/types/Card';
 import { CardValue } from '@/constants/Card';
-import { canStackInPlaceHolder, canStackOn, initGame, sleep } from '@/utils/GameUtils';
-import { reactive, ref, onMounted, watchPostEffect } from 'vue'
+import { canStackInPlaceHolder, canStackOn, initGame, sleep, isGameWon, canQuickWin } from '@/utils/GameUtils';
+import { reactive, ref, onMounted, watchPostEffect, onBeforeMount, onBeforeUnmount } from 'vue';
+import { useGameStore } from '@/stores/game';
+import { onBeforeRouteLeave } from 'vue-router';
 // import { DndProvider } from 'vue3-dnd'
 // import { HTML5Backend } from 'react-dnd-html5-backend'
 
+const { gameMode } = useGameStore();
+const isQuickWin = ref(false);
 const mounted = ref(false);
 const deck = reactive<CardType[]>(initGame());
 const deckDisplayed = reactive<CardType[]>([]);
@@ -17,6 +21,43 @@ const colorsPlaceholder = reactive<{ [key in Symbol]: CardType[] }>({
   [Symbol.DIAMOND]: [],
   [Symbol.CLUB]: []
 });
+
+onBeforeMount(() => {
+  window.addEventListener("beforeunload", preventLeave);
+})
+
+onBeforeUnmount(() => {
+  window.removeEventListener("beforeunload", preventLeave);
+})
+
+onBeforeRouteLeave((_to, _from, next) => {
+  if (!window.confirm('Are you sure you want to leave? Your game will be lost.')) {
+    next(false);
+  } else {
+    next(true);
+  }
+})
+
+const preventLeave = (event: Event) => {
+  event.preventDefault();
+}
+
+watchPostEffect(() => {
+  if (mounted.value && gameCards.some((col) => col.length !== 0)) {
+    gameCards.forEach((col) => {
+      if (col.length > 0) {
+        col[col.length - 1].hidden = false;
+      }
+    })
+  }
+  if (mounted.value && canQuickWin(gameCards, deck, deckDisplayed)) {
+    isQuickWin.value = true;
+  }
+
+  if (mounted.value && isGameWon(colorsPlaceholder)) {
+    console.log('win');
+  }
+})
 
 const getActive = (): [CardType | null, CardType[] | null] => {
   let activeCard: CardType | undefined = gameCards.flat().find((c) => c.active);
@@ -56,19 +97,9 @@ const getTopCard = (card: CardType): CardType => {
   return column[column.length - 1];
 }
 
-watchPostEffect(() => {
-  if (mounted.value && gameCards.some((col) => col.length !== 0)) {
-    gameCards.forEach((col) => {
-      if (col.length > 0) {
-        col[col.length - 1].hidden = false;
-      }
-    })
-  }
-})
-
 const pickFromDeck = () => {
-  if (deck.length < 3 && deck.length > 0) {
-    deck.forEach(card => {
+  if (deck.length <= gameMode && deck.length > 0) {
+    deck.reverse().forEach(card => {
       card.hidden = false;
       deckDisplayed.push(card);
     });
@@ -80,7 +111,7 @@ const pickFromDeck = () => {
     });
     deckDisplayed.splice(0, deckDisplayed.length);
   } else {
-    for (let i = 0; i < 3; i++) {
+    for (let i = 0; i < gameMode; i++) {
       deck[deck.length - 1].hidden = false;
       deckDisplayed.push(deck.pop() as CardType);
     }
@@ -122,7 +153,6 @@ const selectCard = (card: CardType) => {
       card.active = true;
     } else {
       if (gameCards.includes(column)) {
-        console.log('is game card');
         if (canStackOn(activeCard, topCard)) {
           const cardIndex = column.indexOf(card);
           const activeCardIndex = activeColumn.indexOf(activeCard);
@@ -135,7 +165,6 @@ const selectCard = (card: CardType) => {
           activeCard.active = false;
         }
       } else if (Object.values(colorsPlaceholder).includes(column)) {
-        console.log('is placeholder');
         if (canStackInPlaceHolder(activeCard, topCard)) {
           column.push(activeCard);
           activeColumn.splice(activeColumn.indexOf(activeCard));
@@ -144,7 +173,6 @@ const selectCard = (card: CardType) => {
           activeCard.active = false;
         }
       } else if (column === deckDisplayed) {
-        console.log('is deck');
 
         activeCard.active = false;
         card.active = true;
@@ -168,7 +196,6 @@ const colClicked = (colIndex: number) => {
     return;
   }
   // TODO : faire la fonction movecard moveCard(card, column);
-
 }
 
 onMounted(async () => {
@@ -185,11 +212,24 @@ onMounted(async () => {
   mounted.value = true;
 })
 
+const quickWin = () => {
+  while (gameCards.some((cards) => cards.length > 0)) {
+    gameCards.reverse().forEach(async (cards) => {
+      const card = cards.pop();
+      if (!!card) {
+        await sleep(100);
+        colorsPlaceholder[card.symbol].push(card);
+      }
+    });
+  }
+}
+
 </script>
 
 <template>
   <!-- <DndProvider :backend="HTML5Backend"> -->
   <main class="game">
+    <button v-if="isQuickWin" class="absolute right-10 top-10 bg-white rounded-md py-1 px-2" @click="quickWin">Click to win</button>
     <div class="grid upper border border-red-500">
       <div class="deck-area broder border-white">
         <div class="deck border border-lime-500" @click="pickFromDeck">

@@ -7,6 +7,11 @@ export const initGame = () => {
   return shuffledCards;
 }
 
+// export const initGame = () => {
+//   const cards = getCards();
+//   return cards;
+// }
+
 
 const getCards = (): CardType[] => {
   const cards: CardType[] = [];
@@ -37,8 +42,6 @@ export const sleep = async (ms: number) => {
 export const canStackOn = (from: CardType, to: CardType): boolean => {
   const fromPower = CardValue.indexOf(from.value);
   const toPower = CardValue.indexOf(to.value);
-  console.log(`from ${from.value} of ${from.symbol} with power of : ${fromPower}`);
-  console.log(`to ${to.value} of ${to.symbol} with power of : ${toPower}`);
   const colors = {
     red: [Symbol.HEART, Symbol.DIAMOND],
     black: [Symbol.SPADE, Symbol.CLUB]
@@ -66,4 +69,15 @@ export const canStackInPlaceHolder = (from: CardType, to: CardType): boolean => 
     return false;
   }
   return true;
+}
+
+export const isGameWon = (placeholder: { [key in Symbol]: CardType[] }) => {
+  return Object.values(placeholder).every((cards) => cards.length === 13);
+}
+
+export const canQuickWin = (gameCards: CardType[][], deck: CardType[], deckDisplay: CardType[]) => {
+  if (deck.length === 0 && deckDisplay.length === 0) {
+    return gameCards.every((cards) => cards.every((card) => !card.hidden));
+  }
+  return false;
 }
