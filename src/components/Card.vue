@@ -25,11 +25,17 @@ const formatStyle = (marginTop: number | undefined, marginLeft: number | undefin
   return `margin-left: ${marginLeft}rem;`;
 };
 
-const emit = defineEmits(['selected']);
+const emit = defineEmits(['selected', 'rightClicked']);
 
 const SelectCard = () => {
-
+  console.log('simple click');
   emit('selected', value);
+}
+
+const RightClicked = (e: MouseEvent) => {
+  e.preventDefault();
+  console.log('right click');
+  emit('rightClicked', value);
 }
 
 // const [collectedProps, dragSource] = useDrag(() => ({
@@ -53,7 +59,7 @@ const svg = {
 
 <template>
   <div v-if="!value.hidden" class="card" :class="value.symbol, value.active && 'active'"
-    :style="formatStyle(marginTop, marginLeft)" @click="SelectCard">
+    :style="formatStyle(marginTop, marginLeft)" @click="SelectCard" @contextmenu="RightClicked">
     <div>
       <span>{{ value.value }}</span>
       <img :src="svg[value.symbol]" />

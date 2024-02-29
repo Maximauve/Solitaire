@@ -6,6 +6,7 @@ import { canStackInPlaceHolder, canStackOn, initGame, sleep, isGameWon, canQuick
 import { reactive, ref, onMounted, watchPostEffect, onBeforeMount, onBeforeUnmount } from 'vue';
 import { useGameStore } from '@/stores/game';
 import { onBeforeRouteLeave } from 'vue-router';
+import SelectGameMode from '@/components/SelectGameMode.vue';
 // import { DndProvider } from 'vue3-dnd'
 // import { HTML5Backend } from 'react-dnd-html5-backend'
 
@@ -21,6 +22,7 @@ const colorsPlaceholder = reactive<{ [key in Symbol]: CardType[] }>({
   [Symbol.DIAMOND]: [],
   [Symbol.CLUB]: []
 });
+const isWinned = ref(false);
 
 onBeforeMount(() => {
   window.addEventListener("beforeunload", preventLeave);
@@ -39,6 +41,7 @@ onBeforeRouteLeave((_to, _from, next) => {
 })
 
 const preventLeave = (event: Event) => {
+  if (isWinned.value) return;
   event.preventDefault();
 }
 
@@ -55,7 +58,8 @@ watchPostEffect(() => {
   }
 
   if (mounted.value && isGameWon(colorsPlaceholder)) {
-    console.log('win');
+    isWinned.value = true;
+    isQuickWin.value = false;
   }
 })
 
@@ -198,6 +202,17 @@ const colClicked = (colIndex: number) => {
   // TODO : faire la fonction movecard moveCard(card, column);
 }
 
+const QuickMove = (card: CardType) => {
+  const color = card.symbol;
+  const placeHolderColumn = colorsPlaceholder[color];
+  if ((placeHolderColumn.length === 0 && card.value === CardValue[0]) || canStackInPlaceHolder(card, placeHolderColumn[placeHolderColumn.length - 1])) {
+    placeHolderColumn.push(card);
+    const column = getColumn(card);
+    column.splice(column.indexOf(card));
+    card.active = false;
+  }
+}
+
 onMounted(async () => {
   for (let i = 0; i < 7; i++) {
     for (let j = i; j < 7; j++) {
@@ -212,7 +227,7 @@ onMounted(async () => {
   mounted.value = true;
 })
 
-const quickWin = () => {
+const quickWin = async () => {
   while (gameCards.some((cards) => cards.length > 0)) {
     gameCards.reverse().forEach(async (cards) => {
       const card = cards.pop();
@@ -229,27 +244,35 @@ const quickWin = () => {
 <template>
   <!-- <DndProvider :backend="HTML5Backend"> -->
   <main class="game">
-    <button v-if="isQuickWin" class="absolute right-10 top-10 bg-white rounded-md py-1 px-2" @click="quickWin">Click to win</button>
-    <div class="grid upper border border-red-500">
-      <div class="deck-area broder border-white">
-        <div class="deck border border-lime-500" @click="pickFromDeck">
+    <div v-if="isWinned" class="absolute w-screen h-screen bg-[rgba(0,0,0,0.5)] flex justify-center items-center">
+      <div class="w-60 h-40 flex flex-col justify-center items-center bg-white">
+        <p class="text-2xl mb-4">You won !</p>
+        <SelectGameMode label="Another game ?" :reset="true" />
+      </div>
+    </div>
+    <button v-if="isQuickWin" class="absolute right-10 top-10 bg-white rounded-md py-1 px-2" @click="quickWin">Click to
+      win</button>
+    <div class="grid upper">
+      <div class="deck-area">
+        <div class="deck" @click="pickFromDeck">
           <Card v-for="(card, index) in deck" :value="card" />
+          <div class="deck-placeholder"></div>
         </div>
-        <div class="deck-displayed border border-lime-500">
-          <Card v-for="(card, index) in deckDisplayed" :value="card" @selected="selectCard" />
+        <div class="deck-displayed">
+          <Card v-for="(card, index) in deckDisplayed" :value="card" @selected="selectCard" @rightClicked="QuickMove" />
         </div>
       </div>
-      <div class="colors border border-cyan-400">
+      <div class="colors">
         <div v-for="(placeholder, color) in  colorsPlaceholder " :class="`placeholder-${color}`"
-          @click="() => placeholderClicked(color)" class="placeholder border border-purple-500">
+          @click="() => placeholderClicked(color)" class="placeholder">
           <Card v-for="(card, index) in placeholder" :value="card" @selected="selectCard" />
         </div>
       </div>
     </div>
-    <div class="grid board border border-blue-600">
-      <div v-for=" columnCards, colIndex  in  gameCards " class="border border-yellow-400"
-        @click="() => colClicked(colIndex)">
-        <Card v-for=" card, index  in  columnCards " :value="card" :marginTop="index" @selected="selectCard" />
+    <div class="grid board">
+      <div v-for=" columnCards, colIndex  in  gameCards " @click="() => colClicked(colIndex)">
+        <Card v-for=" card, index  in  columnCards " :value="card" :marginTop="index" @selected="selectCard"
+          @rightClicked="QuickMove" />
       </div>
     </div>
   </main>
